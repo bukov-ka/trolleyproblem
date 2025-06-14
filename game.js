@@ -13,22 +13,28 @@ class Game {
     this.railAngle = 18; // tilt for 2.5D
     this.mainOffset = -35;
 
+    // Branch configuration
+    this.branchHeight = -100; // how far above main track (negative = up)
+    this.branchStartX = 300; // where branch segment starts
+    this.branchLength = 350; // length of branch segment
+    this.branchEndX = this.branchStartX + this.branchLength; // where branch segment ends
+
     // Precompute all the Y-positions in rotated coords
     this.d = this.railDistance / 2; // = 15
     this.railMainY = -this.d; // top rail = -15
-    this.upperY = -45; // branch center
-    this.branchTopY = this.upperY - this.d; // -60
-    this.branchBottomY = this.upperY + this.d + this.d; // (adjusted)
+    this.upperY = this.branchHeight; // branch center
+    this.branchTopY = this.upperY - this.d; // branch top rail
+    this.branchBottomY = this.upperY + this.d - 30 - this.branchHeight; // branch bottom rail
 
     // How much to shift the sprite so it sits on top of the line:
     this.trainAdjustment = this.mainOffset - this.railMainY; // = -20
 
     // Where our branch lives in world X:
-    this.seg0 = 200; // start of flat branch
-    this.seg1 = 400; // end of flat branch
-    this.switchLength = Math.abs(this.upperY); // 45px diagonals
-    this.jointStart = this.seg0 - this.switchLength; // 155
-    this.jointEnd = this.seg1 + this.switchLength; // 445
+    this.seg0 = this.branchStartX; // start of flat branch
+    this.seg1 = this.branchEndX; // end of flat branch
+    this.switchLength = Math.abs(this.upperY); // diagonals length
+    this.jointStart = this.seg0 - this.switchLength; // start of first diagonal
+    this.jointEnd = this.seg1 + this.switchLength; // end of second diagonal
 
     // Train state
     this.trainX = 100;
@@ -76,29 +82,6 @@ class Game {
     return mainY;
   }
 
-  update(deltaTime) {
-    // advance train/viewport
-    this.viewportX += this.trainSpeed;
-    this.trainX += this.trainSpeed;
-
-    // the moment we hit the split-diagonal, choose branch
-    if (!this.branchChosen && this.trainX >= this.jointStart) {
-      this.branchChosen = true;
-      this.directionUp = Math.random() < 0.5;
-    }
-
-    // compute railY and then apply your sprite adjustment
-    const railY = this.getRawRailY(this.trainX);
-    this.trainVerticalOffset = railY + this.trainAdjustment;
-
-    // wrap/reset for next loop
-    if (this.viewportX > this.canvas.width) {
-      this.viewportX = 0;
-      this.trainX = 0;
-      this.branchChosen = false;
-      this.trainVerticalOffset = this.mainOffset;
-    }
-  }
 
   drawRails() {
     const ctx = this.ctx;
@@ -119,9 +102,9 @@ class Game {
     ctx.stroke();
 
     // --- Branch segment ---
-    const upperY = -45; // 45px above main center
-    const seg0 = 200 - this.canvas.width / 2;
-    const seg1 = 400 - this.canvas.width / 2;
+    const upperY = this.branchHeight; // 45px above main center
+    const seg0 = this.branchStartX - this.canvas.width / 2;
+    const seg1 = this.branchEndX - this.canvas.width / 2;
 
     ctx.beginPath();
     ctx.moveTo(seg0, upperY - d);
@@ -195,7 +178,6 @@ class Game {
 
     // 2) When we hit the split diagonal
     if (!this.branchChosen && this.trainX >= this.jointStart) {
-      console.log(`✂️  Enter split at X=${this.trainX.toFixed(1)}`);
       this.branchChosen = true;
       this.directionUp = Math.random() < 0.5;
       console.log(`   → directionUp = ${this.directionUp}`);
@@ -212,6 +194,7 @@ class Game {
       this.branchChosen = true;
       this.directionUp = Math.random() < 0.5;
     }
+    this.directionUp=false;
 
     // now pick the correct Y offset for wherever we are:
     let railY;
@@ -239,7 +222,7 @@ class Game {
     // center‐the sprite on that rail line:
     this.trainVerticalOffset = railY + this.trainAdjustment;
 
-    // 4) If we’re back on the main rails, check for drift
+    // 4) If we're back on the main rails, check for drift
     if (this.trainX < this.jointStart || this.trainX >= this.jointEnd) {
       const diff = this.trainVerticalOffset - this.mainOffset;
       if (Math.abs(diff) > 0.5) {

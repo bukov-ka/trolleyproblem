@@ -19,3 +19,20 @@ The following 'map' is used. It is a set of decisions, the first number is the n
 - 0,1
 
 For each 'decision' the switch chosen by the user should be saved. Undefined should be saved if the user hasn't choosen anything.
+
+Here’s the whole setup in a nutshell:
+
+Main Rails
+Two long, parallel rails tilted 18° for a 2.5D look, running straight across the screen.
+
+Branch Segment
+Between world-X ≈200 and ≈400 there’s an alternate pair of rails (“branch”) sitting 45 px above the main track.
+
+Switch Diagonals
+A 45 px diagonal connector leads off the main rails into the branch (at X≈155→200), and another back down (at X≈400→445).
+
+Random Path Choice
+As soon as the train reaches the first diagonal start (X≈155), we randomly pick “up” or “down” and interpolate along the connector onto the branch. At the second diagonal (X≈400), we interpolate back to the main rails.
+
+Continuous Loop
+After X exceeds the canvas width, everything resets: train back on main track, new random choice on the next pass.
