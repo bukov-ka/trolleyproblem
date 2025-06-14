@@ -170,23 +170,10 @@ class Game {
     this.viewportX += this.trainSpeed;
     this.trainX += this.trainSpeed;
 
-    // 1) Log a new loop
-    if (!this.hasLoggedReset && this.trainX < this.trainSpeed) {
-      console.log("🔄 Starting new loop");
-      this.hasLoggedReset = true;
-    }
-
     // 2) When we hit the split diagonal
     if (!this.branchChosen && this.trainX >= this.jointStart) {
       this.branchChosen = true;
       this.directionUp = Math.random() < 0.5;
-      console.log(`   → directionUp = ${this.directionUp}`);
-    }
-
-    // 3) When we hit the merge diagonal
-    if (this.branchChosen && !this.hasLoggedMerge && this.trainX >= this.seg1) {
-      console.log(`🔗 Enter merge at X=${this.trainX.toFixed(1)}`);
-      this.hasLoggedMerge = true;
     }
 
     // once we hit the start of the diagonal, pick a random branch
@@ -194,7 +181,6 @@ class Game {
       this.branchChosen = true;
       this.directionUp = Math.random() < 0.5;
     }
-    this.directionUp=false;
 
     // now pick the correct Y offset for wherever we are:
     let railY;
@@ -240,9 +226,6 @@ class Game {
       this.viewportX = 0;
       this.trainX = 0;
       this.branchChosen = false;
-      this.hasLoggedReset = false;
-      this.hasLoggedSplit = false;
-      this.hasLoggedMerge = false;
       // put the train back on the main track
       this.trainVerticalOffset = this.mainOffset;
     }
