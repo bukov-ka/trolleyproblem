@@ -170,7 +170,6 @@ class Game {
     this.viewportX += this.trainSpeed;
     this.trainX += this.trainSpeed;
 
-    // 2) When we hit the split diagonal
     if (!this.branchChosen && this.trainX >= this.jointStart) {
       this.branchChosen = true;
       this.directionUp = Math.random() < 0.5;
@@ -208,18 +207,10 @@ class Game {
     // center‐the sprite on that rail line:
     this.trainVerticalOffset = railY + this.trainAdjustment;
 
-    // 4) If we're back on the main rails, check for drift
+    // check for drift when on main rails
     if (this.trainX < this.jointStart || this.trainX >= this.jointEnd) {
       const diff = this.trainVerticalOffset - this.mainOffset;
-      if (Math.abs(diff) > 0.5) {
-        console.warn(
-          `🚨 BUMP? Main path at X=${this.trainX.toFixed(1)} → ` +
-            `offset=${this.trainVerticalOffset.toFixed(2)} (expected ${
-              this.mainOffset
-            })`
-        );
-      }
-    }
+          }
 
     // loop/reset
     if (this.viewportX > this.canvas.width) {
