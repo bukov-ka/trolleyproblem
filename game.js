@@ -8,31 +8,46 @@ class Game {
     this.canvas.height = 600;
 
     // Game parameters
-    this.trainVerticalOffset = -35; // Vertical offset of the train along the rotated axes
     this.trainSpeed = 2;
-    this.railDistance = 30; // Distance between the two rails
-    this.railAngle = 18; // Tilt angle for the 2.5D effect
+    this.railDistance = 30; // vertical gap between rails
+    this.railAngle = 18; // tilt for 2.5D
+    // your original “main” offset:
+    this.mainOffset = -35;
 
-    // Decision points (not used in this snippet, but kept for future logic)
-    this.decisionPoints = [
-      { x: 200, split: true },
-      { x: 400, merge: true },
-      { x: 600, split: true },
-      { x: 800, merge: true },
-    ];
+    // Precompute rail-Y in rotated coords:
+    this.d = this.railDistance / 2; // = 15
+    this.railMainY = -this.d; // (-15)
+    this.upperY = -45; // branch center
+    this.branchTopY = this.upperY - this.d; // -45 -15 = -60
+    this.branchBottomY = this.upperY + this.d + this.d;
 
-    // Load train sprite
+    // how much to push the sprite relative to the rail line
+    this.trainAdjustment = this.mainOffset - this.railMainY; // -35 - (-15) = -20
+
+    // where the branch segment lives in world-X
+    this.seg0 = 200; // start of branch
+    this.seg1 = 400; // end of branch
+    this.switchLength = Math.abs(this.upperY - 0); // 45px of diagonal
+    this.jointStart = this.seg0 - this.switchLength; // =155
+    this.jointEnd = this.seg1 + this.switchLength; // =445
+
+    // train state
+    this.trainX = 100;
+    this.viewportX = 0;
+    this.branchChosen = false;
+    this.directionUp = false; // true = go to top branch
+
+    // Load sprite…
     this.trainImage = new Image();
     this.trainImage.src = "train.png";
 
-    // Train state
-    this.trainX = 100; // World-space X position of the train
-    this.viewportX = 0; // For scrolling logic
-
-    // Kick off animation
     this.lastTime = 0;
     this.animate = this.animate.bind(this);
     requestAnimationFrame(this.animate);
+
+    this.hasLoggedReset = false;
+    this.hasLoggedSplit = false;
+    this.hasLoggedMerge = false;
   }
 
   drawRails() {
@@ -119,14 +134,84 @@ class Game {
   }
 
   update(deltaTime) {
-    // advance viewport/train
     this.viewportX += this.trainSpeed;
     this.trainX += this.trainSpeed;
 
-    // wrap around
+    // 1) Log a new loop
+    if (!this.hasLoggedReset && this.trainX < this.trainSpeed) {
+      console.log("🔄 Starting new loop");
+      this.hasLoggedReset = true;
+    }
+
+    // 2) When we hit the split diagonal
+    if (!this.branchChosen && this.trainX >= this.jointStart) {
+      console.log(`✂️  Enter split at X=${this.trainX.toFixed(1)}`);
+      this.branchChosen = true;
+      this.directionUp = Math.random() < 0.5;
+      console.log(`   → directionUp = ${this.directionUp}`);
+    }
+
+    // 3) When we hit the merge diagonal
+    if (this.branchChosen && !this.hasLoggedMerge && this.trainX >= this.seg1) {
+      console.log(`🔗 Enter merge at X=${this.trainX.toFixed(1)}`);
+      this.hasLoggedMerge = true;
+    }
+
+    // once we hit the start of the diagonal, pick a random branch
+    if (!this.branchChosen && this.trainX >= this.jointStart) {
+      this.branchChosen = true;
+      this.directionUp = Math.random() < 0.5;
+    }
+
+    // now pick the correct Y offset for wherever we are:
+    let railY;
+    if (this.trainX < this.jointStart) {
+      // on main
+      railY = this.railMainY;
+    } else if (this.trainX < this.seg0) {
+      // first diagonal (main → branch)
+      const t = (this.trainX - this.jointStart) / this.switchLength;
+      const target = this.directionUp ? this.branchTopY : this.branchBottomY;
+      railY = this.railMainY + (target - this.railMainY) * t;
+    } else if (this.trainX < this.seg1) {
+      // on branch
+      railY = this.directionUp ? this.branchTopY : this.branchBottomY;
+    } else if (this.trainX < this.jointEnd) {
+      // second diagonal (branch → main)
+      const t = (this.trainX - this.seg1) / this.switchLength;
+      const start = this.directionUp ? this.branchTopY : this.branchBottomY;
+      railY = start + (this.railMainY - start) * t;
+    } else {
+      // back on main for the rest of the loop
+      railY = this.railMainY;
+    }
+
+    // center‐the sprite on that rail line:
+    this.trainVerticalOffset = railY + this.trainAdjustment;
+
+    // 4) If we’re back on the main rails, check for drift
+    if (this.trainX < this.jointStart || this.trainX >= this.jointEnd) {
+      const diff = this.trainVerticalOffset - this.mainOffset;
+      if (Math.abs(diff) > 0.5) {
+        console.warn(
+          `🚨 BUMP? Main path at X=${this.trainX.toFixed(1)} → ` +
+            `offset=${this.trainVerticalOffset.toFixed(2)} (expected ${
+              this.mainOffset
+            })`
+        );
+      }
+    }
+
+    // loop/reset
     if (this.viewportX > this.canvas.width) {
       this.viewportX = 0;
       this.trainX = 0;
+      this.branchChosen = false;
+      this.hasLoggedReset = false;
+      this.hasLoggedSplit = false;
+      this.hasLoggedMerge = false;
+      // put the train back on the main track
+      this.trainVerticalOffset = this.mainOffset;
     }
   }
 
