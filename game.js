@@ -11,43 +11,93 @@ class Game {
     this.trainSpeed = 2;
     this.railDistance = 30; // vertical gap between rails
     this.railAngle = 18; // tilt for 2.5D
-    // your original “main” offset:
     this.mainOffset = -35;
 
-    // Precompute rail-Y in rotated coords:
+    // Precompute all the Y-positions in rotated coords
     this.d = this.railDistance / 2; // = 15
-    this.railMainY = -this.d; // (-15)
+    this.railMainY = -this.d; // top rail = -15
     this.upperY = -45; // branch center
-    this.branchTopY = this.upperY - this.d; // -45 -15 = -60
-    this.branchBottomY = this.upperY + this.d + this.d;
+    this.branchTopY = this.upperY - this.d; // -60
+    this.branchBottomY = this.upperY + this.d + this.d; // (adjusted)
 
-    // how much to push the sprite relative to the rail line
-    this.trainAdjustment = this.mainOffset - this.railMainY; // -35 - (-15) = -20
+    // How much to shift the sprite so it sits on top of the line:
+    this.trainAdjustment = this.mainOffset - this.railMainY; // = -20
 
-    // where the branch segment lives in world-X
-    this.seg0 = 200; // start of branch
-    this.seg1 = 400; // end of branch
-    this.switchLength = Math.abs(this.upperY - 0); // 45px of diagonal
-    this.jointStart = this.seg0 - this.switchLength; // =155
-    this.jointEnd = this.seg1 + this.switchLength; // =445
+    // Where our branch lives in world X:
+    this.seg0 = 200; // start of flat branch
+    this.seg1 = 400; // end of flat branch
+    this.switchLength = Math.abs(this.upperY); // 45px diagonals
+    this.jointStart = this.seg0 - this.switchLength; // 155
+    this.jointEnd = this.seg1 + this.switchLength; // 445
 
-    // train state
+    // Train state
     this.trainX = 100;
     this.viewportX = 0;
     this.branchChosen = false;
-    this.directionUp = false; // true = go to top branch
+    this.directionUp = false;
+    this.trainVerticalOffset = this.mainOffset; // initialize on main track
 
-    // Load sprite…
+    // Load sprite
     this.trainImage = new Image();
     this.trainImage.src = "train.png";
 
+    // Kick off animation
     this.lastTime = 0;
     this.animate = this.animate.bind(this);
     requestAnimationFrame(this.animate);
+  }
 
-    this.hasLoggedReset = false;
-    this.hasLoggedSplit = false;
-    this.hasLoggedMerge = false;
+  // ——— Helper: raw rail Y in world-space, *before* sprite adjustment ———
+  getRawRailY(x) {
+    const mainY = this.railMainY;
+    const branchY = this.directionUp ? this.branchTopY : this.branchBottomY;
+
+    // 1) Main flat before split
+    if (x < this.jointStart) {
+      return mainY;
+    }
+    // 2) Diagonal down/up to branch
+    if (x < this.seg0) {
+      let t = (x - this.jointStart) / (this.seg0 - this.jointStart);
+      t = Math.min(Math.max(t, 0), 1);
+      return mainY + (branchY - mainY) * t;
+    }
+    // 3) Flat on branch
+    if (x < this.seg1) {
+      return branchY;
+    }
+    // 4) Diagonal back to main
+    if (x < this.jointEnd) {
+      let t = (x - this.seg1) / (this.jointEnd - this.seg1);
+      t = Math.min(Math.max(t, 0), 1);
+      return branchY + (mainY - branchY) * t;
+    }
+    // 5) Main flat after merge
+    return mainY;
+  }
+
+  update(deltaTime) {
+    // advance train/viewport
+    this.viewportX += this.trainSpeed;
+    this.trainX += this.trainSpeed;
+
+    // the moment we hit the split-diagonal, choose branch
+    if (!this.branchChosen && this.trainX >= this.jointStart) {
+      this.branchChosen = true;
+      this.directionUp = Math.random() < 0.5;
+    }
+
+    // compute railY and then apply your sprite adjustment
+    const railY = this.getRawRailY(this.trainX);
+    this.trainVerticalOffset = railY + this.trainAdjustment;
+
+    // wrap/reset for next loop
+    if (this.viewportX > this.canvas.width) {
+      this.viewportX = 0;
+      this.trainX = 0;
+      this.branchChosen = false;
+      this.trainVerticalOffset = this.mainOffset;
+    }
   }
 
   drawRails() {
@@ -217,36 +267,24 @@ class Game {
 
   draw() {
     const ctx = this.ctx;
-
-    // 1) clear in device-space
     ctx.resetTransform();
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-    // 2) set up our 2.5D “world” transform once
     ctx.save();
     ctx.translate(this.canvas.width / 2, this.canvas.height / 2);
     ctx.rotate((this.railAngle * Math.PI) / 180);
-
-    // 3) draw both rails and train under that same transform
     this.drawRails();
     this.drawTrain();
-
-    // 4) pop back to identity
     ctx.restore();
   }
 
   animate(currentTime) {
     const deltaTime = currentTime - this.lastTime;
     this.lastTime = currentTime;
-
     this.update(deltaTime);
     this.draw();
-
     requestAnimationFrame(this.animate);
   }
 }
 
-// Initialize when the page loads
-window.addEventListener("load", () => {
-  new Game();
-});
+window.addEventListener("load", () => new Game());
