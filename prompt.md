@@ -26,7 +26,7 @@ Main Rails
 Two long, parallel rails tilted 18° for a 2.5D look, running straight across the screen.
 
 Branch Segment
-Between world-X ≈200 and ≈400 there’s an alternate pair of rails (“branch”) sitting 45 px above the main track.
+There’s an alternate pair of rails (“branch”) sitting 45 px above the main track.
 
 Switch Diagonals
 A 45 px diagonal connector leads off the main rails into the branch (at X≈155→200), and another back down (at X≈400→445).

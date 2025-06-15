@@ -12,6 +12,26 @@ class Game {
     this.railDistance = 30; // vertical gap between rails
     this.railAngle = 18; // tilt for 2.5D
     this.mainOffset = -35;
+    this.verticalOffset = 25; // Vertical offset for human positioning
+
+    // Human configuration
+    this.humansMain = 5; // number of humans on main track
+    this.humansAlternate = 5; // number of humans on alternate track
+    this.humanSpacing = 30; // pixels between humans
+    this.humanImages = [];
+    this.hitImages = [];
+    this.hitImageIndex = 0;
+    this.hitHumans = new Set(); // track which humans have been hit
+
+    // Load human sprites
+    for (let i = 1; i <= 5; i++) {
+      const hitImg = new Image();
+      hitImg.src = `hit${i}.png`;
+      this.hitImages.push(hitImg);
+    }
+    const humanImg = new Image();
+    humanImg.src = "human.png";
+    this.humanImages.push(humanImg);
 
     // Branch configuration
     this.branchHeight = -100; // how far above main track (negative = up)
@@ -144,6 +164,55 @@ class Game {
     ctx.stroke();
   }
 
+  drawHumans() {
+    const ctx = this.ctx;
+    ctx.save();
+
+    // Calculate center of branch segment
+    const branchCenterX = this.seg0 + (this.seg1 - this.seg0) / 2;
+    
+    // Draw humans on main track - centered around branch segment
+    const mainStartX = branchCenterX - (this.humansMain * this.humanSpacing) / 2;
+    for (let i = 0; i < this.humansMain; i++) {
+      const x = mainStartX + i * this.humanSpacing;
+      const y = this.railMainY + this.trainAdjustment + this.verticalOffset;
+      this.drawHuman(x, y, false);
+    }
+
+    // Draw humans on branch track - centered around branch segment
+    const branchStartX = branchCenterX - (this.humansAlternate * this.humanSpacing) / 2;
+    for (let i = 0; i < this.humansAlternate; i++) {
+      const x = branchStartX + i * this.humanSpacing;
+      const y = this.branchTopY + this.trainAdjustment + this.verticalOffset;
+      this.drawHuman(x, y, true);
+    }
+
+    ctx.restore();
+  }
+
+  drawHuman(x, y, isOnBranch) {
+    const ctx = this.ctx;
+    const humanKey = `${x},${y},${isOnBranch}`;
+    const isHit = this.hitHumans.has(humanKey);
+    
+    ctx.save();
+    ctx.translate(x - this.canvas.width / 2, y);
+    ctx.rotate((-this.railAngle * Math.PI) / 180);
+    
+    const img = isHit ? this.hitImages[this.hitImageIndex] : this.humanImages[0];
+    // Scale down the human sprites to 50% of their original size
+    const scale = 0.5;
+    ctx.drawImage(
+      img, 
+      -img.width * scale / 2, 
+      -img.height * scale / 2,
+      img.width * scale,
+      img.height * scale
+    );
+    
+    ctx.restore();
+  }
+
   drawTrain() {
     const ctx = this.ctx;
     ctx.save();
@@ -166,16 +235,50 @@ class Game {
     ctx.restore();
   }
 
+  checkCollisions() {
+    const trainWidth = this.trainImage.width;
+    const trainHeight = this.trainImage.height;
+    const humanWidth = this.humanImages[0].width * 0.5; // Account for scaling
+    const humanHeight = this.humanImages[0].height * 0.5; // Account for scaling
+
+    // Calculate center of branch segment
+    const branchCenterX = this.seg0 + (this.seg1 - this.seg0) / 2;
+
+    // Check main track humans
+    const mainStartX = branchCenterX - (this.humansMain * this.humanSpacing) / 2;
+    for (let i = 0; i < this.humansMain; i++) {
+      const x = mainStartX + i * this.humanSpacing;
+      const y = this.railMainY + this.trainAdjustment + this.verticalOffset;
+      const humanKey = `${x},${y},false`;
+      
+      if (!this.hitHumans.has(humanKey) && 
+          Math.abs(this.trainX - x) < (trainWidth + humanWidth) / 2 &&
+          Math.abs(this.trainVerticalOffset - y) < (trainHeight + humanHeight) / 2) {
+        this.hitHumans.add(humanKey);
+        this.hitImageIndex = (this.hitImageIndex + 1) % this.hitImages.length;
+      }
+    }
+
+    // Check branch humans
+    const branchStartX = branchCenterX - (this.humansAlternate * this.humanSpacing) / 2;
+    for (let i = 0; i < this.humansAlternate; i++) {
+      const x = branchStartX + i * this.humanSpacing;
+      const y = this.branchTopY + this.trainAdjustment + this.verticalOffset;
+      const humanKey = `${x},${y},true`;
+      
+      if (!this.hitHumans.has(humanKey) && 
+          Math.abs(this.trainX - x) < (trainWidth + humanWidth) / 2 &&
+          Math.abs(this.trainVerticalOffset - y) < (trainHeight + humanHeight) / 2) {
+        this.hitHumans.add(humanKey);
+        this.hitImageIndex = (this.hitImageIndex + 1) % this.hitImages.length;
+      }
+    }
+  }
+
   update(deltaTime) {
     this.viewportX += this.trainSpeed;
     this.trainX += this.trainSpeed;
 
-    if (!this.branchChosen && this.trainX >= this.jointStart) {
-      this.branchChosen = true;
-      this.directionUp = Math.random() < 0.5;
-    }
-
-    // once we hit the start of the diagonal, pick a random branch
     if (!this.branchChosen && this.trainX >= this.jointStart) {
       this.branchChosen = true;
       this.directionUp = Math.random() < 0.5;
@@ -207,18 +310,16 @@ class Game {
     // center‐the sprite on that rail line:
     this.trainVerticalOffset = railY + this.trainAdjustment;
 
-    // check for drift when on main rails
-    if (this.trainX < this.jointStart || this.trainX >= this.jointEnd) {
-      const diff = this.trainVerticalOffset - this.mainOffset;
-          }
+    // Check for collisions with humans
+    this.checkCollisions();
 
     // loop/reset
     if (this.viewportX > this.canvas.width) {
       this.viewportX = 0;
       this.trainX = 0;
       this.branchChosen = false;
-      // put the train back on the main track
       this.trainVerticalOffset = this.mainOffset;
+      this.hitHumans.clear(); // Reset hit humans on loop
     }
   }
 
@@ -231,6 +332,7 @@ class Game {
     ctx.translate(this.canvas.width / 2, this.canvas.height / 2);
     ctx.rotate((this.railAngle * Math.PI) / 180);
     this.drawRails();
+    this.drawHumans();
     this.drawTrain();
     ctx.restore();
   }
