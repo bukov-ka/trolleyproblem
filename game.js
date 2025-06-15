@@ -241,6 +241,12 @@ class Game {
     const humanWidth = this.humanImages[0].width * 0.5; // Account for scaling
     const humanHeight = this.humanImages[0].height * 0.5; // Account for scaling
 
+    // Define hit zone at the right border of the train
+    const hitZoneWidth = 10; // Width of the hit zone (smaller since it's at the edge)
+    const hitZoneHeight = 20; // Height of the hit zone
+    const hitZoneOffsetX = trainWidth / 4 - 15 - hitZoneWidth / 2; // Position hit zone at right edge of train
+    const hitZoneOffsetY = 10; // Position hit zone at bottom of train
+
     // Calculate center of branch segment
     const branchCenterX = this.seg0 + (this.seg1 - this.seg0) / 2;
 
@@ -251,9 +257,11 @@ class Game {
       const y = this.railMainY + this.trainAdjustment + this.verticalOffset;
       const humanKey = `${x},${y},false`;
       
+      // Only check collision if we're on the main track
       if (!this.hitHumans.has(humanKey) && 
-          Math.abs(this.trainX - x) < (trainWidth + humanWidth) / 2 &&
-          Math.abs(this.trainVerticalOffset - y) < (trainHeight + humanHeight) / 2) {
+          !this.directionUp && // Only check if we're on main track
+          Math.abs(this.trainX + hitZoneOffsetX - x) < (hitZoneWidth + humanWidth) / 2 &&
+          Math.abs(this.trainVerticalOffset + hitZoneOffsetY - y) < (hitZoneHeight + humanHeight) / 2) {
         this.hitHumans.add(humanKey);
         this.hitImageIndex = (this.hitImageIndex + 1) % this.hitImages.length;
       }
@@ -266,9 +274,11 @@ class Game {
       const y = this.branchTopY + this.trainAdjustment + this.verticalOffset;
       const humanKey = `${x},${y},true`;
       
+      // Only check collision if we're on the branch track
       if (!this.hitHumans.has(humanKey) && 
-          Math.abs(this.trainX - x) < (trainWidth + humanWidth) / 2 &&
-          Math.abs(this.trainVerticalOffset - y) < (trainHeight + humanHeight) / 2) {
+          this.directionUp && // Only check if we're on branch track
+          Math.abs(this.trainX + hitZoneOffsetX - x) < (hitZoneWidth + humanWidth) / 2 &&
+          Math.abs(this.trainVerticalOffset + hitZoneOffsetY - y) < (hitZoneHeight + humanHeight) / 2) {
         this.hitHumans.add(humanKey);
         this.hitImageIndex = (this.hitImageIndex + 1) % this.hitImages.length;
       }
