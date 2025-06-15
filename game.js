@@ -20,8 +20,8 @@ class Game {
     this.humanSpacing = 30; // pixels between humans
     this.humanImages = [];
     this.hitImages = [];
-    this.hitImageIndex = 0;
-    this.hitHumans = new Set(); // track which humans have been hit
+    this.nextHitIndex = 0; // Track which hit sprite to use next
+    this.hitHumans = new Map(); // Map of human keys to their hit sprite index
 
     // Load human sprites
     for (let i = 1; i <= 5; i++) {
@@ -193,13 +193,13 @@ class Game {
   drawHuman(x, y, isOnBranch) {
     const ctx = this.ctx;
     const humanKey = `${x},${y},${isOnBranch}`;
-    const isHit = this.hitHumans.has(humanKey);
+    const hitIndex = this.hitHumans.get(humanKey);
     
     ctx.save();
     ctx.translate(x - this.canvas.width / 2, y);
     ctx.rotate((-this.railAngle * Math.PI) / 180);
     
-    const img = isHit ? this.hitImages[this.hitImageIndex] : this.humanImages[0];
+    const img = hitIndex !== undefined ? this.hitImages[hitIndex] : this.humanImages[0];
     // Scale down the human sprites to 50% of their original size
     const scale = 0.5;
     ctx.drawImage(
@@ -262,8 +262,8 @@ class Game {
           !this.directionUp && // Only check if we're on main track
           Math.abs(this.trainX + hitZoneOffsetX - x) < (hitZoneWidth + humanWidth) / 2 &&
           Math.abs(this.trainVerticalOffset + hitZoneOffsetY - y) < (hitZoneHeight + humanHeight) / 2) {
-        this.hitHumans.add(humanKey);
-        this.hitImageIndex = (this.hitImageIndex + 1) % this.hitImages.length;
+        this.hitHumans.set(humanKey, this.nextHitIndex);
+        this.nextHitIndex = (this.nextHitIndex + 1) % this.hitImages.length;
       }
     }
 
@@ -279,8 +279,8 @@ class Game {
           this.directionUp && // Only check if we're on branch track
           Math.abs(this.trainX + hitZoneOffsetX - x) < (hitZoneWidth + humanWidth) / 2 &&
           Math.abs(this.trainVerticalOffset + hitZoneOffsetY - y) < (hitZoneHeight + humanHeight) / 2) {
-        this.hitHumans.add(humanKey);
-        this.hitImageIndex = (this.hitImageIndex + 1) % this.hitImages.length;
+        this.hitHumans.set(humanKey, this.nextHitIndex);
+        this.nextHitIndex = (this.nextHitIndex + 1) % this.hitImages.length;
       }
     }
   }
@@ -330,6 +330,7 @@ class Game {
       this.branchChosen = false;
       this.trainVerticalOffset = this.mainOffset;
       this.hitHumans.clear(); // Reset hit humans on loop
+      this.nextHitIndex = 0; // Reset hit sprite index on loop
     }
   }
 
