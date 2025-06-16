@@ -77,31 +77,45 @@ class Game {
   getRawRailY(x) {
     const mainY = this.railMainY;
     const branchY = this.directionUp ? this.branchTopY : this.branchBottomY;
+    const d = this.d;
 
     // 1) Main flat before split
     if (x < this.jointStart) {
       return mainY;
     }
-    // 2) Diagonal down/up to branch
+    // 2) Bezier curve to branch
     if (x < this.seg0) {
-      let t = (x - this.jointStart) / (this.seg0 - this.jointStart);
-      t = Math.min(Math.max(t, 0), 1);
-      return mainY + (branchY - mainY) * t;
+      const t = (x - this.jointStart) / (this.seg0 - this.jointStart);
+      const controlPointOffset = this.switchLength * 0.5;
+      
+      const p0 = { x: this.jointStart, y: mainY };
+      const p1 = { x: this.jointStart + controlPointOffset, y: mainY };
+      const p2 = { x: this.seg0 - controlPointOffset, y: branchY };
+      const p3 = { x: this.seg0, y: branchY };
+      
+      const point = this.bezierPoint(p0, p1, p2, p3, t);
+      return point.y;
     }
     // 3) Flat on branch
     if (x < this.seg1) {
       return branchY;
     }
-    // 4) Diagonal back to main
+    // 4) Bezier curve back to main
     if (x < this.jointEnd) {
-      let t = (x - this.seg1) / (this.jointEnd - this.seg1);
-      t = Math.min(Math.max(t, 0), 1);
-      return branchY + (mainY - branchY) * t;
+      const t = (x - this.seg1) / (this.jointEnd - this.seg1);
+      const controlPointOffset = this.switchLength * 0.5;
+      
+      const p0 = { x: this.seg1, y: branchY };
+      const p1 = { x: this.seg1 + controlPointOffset, y: branchY };
+      const p2 = { x: this.jointEnd - controlPointOffset, y: mainY };
+      const p3 = { x: this.jointEnd, y: mainY };
+      
+      const point = this.bezierPoint(p0, p1, p2, p3, t);
+      return point.y;
     }
     // 5) Main flat after merge
     return mainY;
   }
-
 
   drawRails() {
     const ctx = this.ctx;
@@ -122,7 +136,7 @@ class Game {
     ctx.stroke();
 
     // --- Branch segment ---
-    const upperY = this.branchHeight; // 45px above main center
+    const upperY = this.branchHeight;
     const seg0 = this.branchStartX - this.canvas.width / 2;
     const seg1 = this.branchEndX - this.canvas.width / 2;
 
@@ -133,34 +147,53 @@ class Game {
     ctx.lineTo(seg1, upperY + d);
     ctx.stroke();
 
-    // --- Switch diagonals ---
-    // run = difference in Y so that dx=dy (45°); tweak if you want a shallower angle
+    // --- Switch diagonals using Bezier curves ---
     const switchLength = Math.abs(upperY - 0);
     const jointX = seg0 - switchLength;
+    const controlPointOffset = switchLength * 0.5; // Control point distance for curve
 
+    // Top rail curve (main to branch)
     ctx.beginPath();
-    // top rail diagonal
     ctx.moveTo(jointX, -d);
-    ctx.lineTo(seg0, upperY - d);
-    // bottom rail diagonal
-    ctx.moveTo(jointX, d);
-    ctx.lineTo(seg0, upperY + d);
+    ctx.bezierCurveTo(
+      jointX + controlPointOffset, -d,
+      seg0 - controlPointOffset, upperY - d,
+      seg0, upperY - d
+    );
     ctx.stroke();
 
-    // --- Merge diagonals (branch → main) ---
-    const mergeStartX = seg1; // end of branch segment
-    const mergeLength = switchLength; // same run as split so 45°
-    const mergeJointX = mergeStartX + mergeLength; // point on main where branch rejoins
-
+    // Bottom rail curve (main to branch)
     ctx.beginPath();
-    // 1) branch top → main top
+    ctx.moveTo(jointX, d);
+    ctx.bezierCurveTo(
+      jointX + controlPointOffset, d,
+      seg0 - controlPointOffset, upperY + d,
+      seg0, upperY + d
+    );
+    ctx.stroke();
+
+    // --- Merge curves (branch → main) ---
+    const mergeStartX = seg1;
+    const mergeJointX = mergeStartX + switchLength;
+
+    // Top rail curve (branch to main)
+    ctx.beginPath();
     ctx.moveTo(mergeStartX, upperY - d);
-    ctx.lineTo(mergeJointX, -d);
+    ctx.bezierCurveTo(
+      mergeStartX + controlPointOffset, upperY - d,
+      mergeJointX - controlPointOffset, -d,
+      mergeJointX, -d
+    );
+    ctx.stroke();
 
-    // 2) branch bottom → main bottom
+    // Bottom rail curve (branch to main)
+    ctx.beginPath();
     ctx.moveTo(mergeStartX, upperY + d);
-    ctx.lineTo(mergeJointX, d);
-
+    ctx.bezierCurveTo(
+      mergeStartX + controlPointOffset, upperY + d,
+      mergeJointX - controlPointOffset, d,
+      mergeJointX, d
+    );
     ctx.stroke();
   }
 
@@ -354,6 +387,22 @@ class Game {
     this.update(deltaTime);
     this.draw();
     requestAnimationFrame(this.animate);
+  }
+
+  // Helper function to calculate Bezier curve point
+  bezierPoint(p0, p1, p2, p3, t) {
+    const cx = 3 * (p1.x - p0.x);
+    const bx = 3 * (p2.x - p1.x) - cx;
+    const ax = p3.x - p0.x - cx - bx;
+    
+    const cy = 3 * (p1.y - p0.y);
+    const by = 3 * (p2.y - p1.y) - cy;
+    const ay = p3.y - p0.y - cy - by;
+    
+    const x = ax * Math.pow(t, 3) + bx * Math.pow(t, 2) + cx * t + p0.x;
+    const y = ay * Math.pow(t, 3) + by * Math.pow(t, 2) + cy * t + p0.y;
+    
+    return { x, y };
   }
 }
 
