@@ -90,6 +90,23 @@ class Game {
 
     this.paused = true; // Start paused until user chooses
     this.updateSwitchUI(); // Ensure UI is correct on load
+
+    // --- Level map (decisions) ---
+    this.levels = [
+      { up: 1, down: 5 },
+      { up: 5, down: 1 },
+      { up: 1, down: 1 },
+      { up: 0, down: 5 },
+      { up: 5, down: 5 },
+      { up: 0, down: 0 },
+      { up: 1, down: 0 },
+      { up: 0, down: 1 }
+    ];
+    this.currentLevel = 0;
+    this.totalHit = 0;
+    this.levelHit = 0;
+    this.levelDecision = [];
+    this.updateLevel();
   }
 
   // ——— Helper: raw rail Y in world-space, *before* sprite adjustment ———
@@ -316,6 +333,9 @@ class Game {
           Math.abs(this.trainVerticalOffset + hitZoneOffsetY - y) < (hitZoneHeight + humanHeight) / 2) {
         this.hitHumans.set(humanKey, this.nextHitIndex);
         this.nextHitIndex = (this.nextHitIndex + 1) % this.hitImages.length;
+        this.levelHit++;
+        this.totalHit++;
+        this.updateHitCounter();
       }
     }
 
@@ -333,6 +353,9 @@ class Game {
           Math.abs(this.trainVerticalOffset + hitZoneOffsetY - y) < (hitZoneHeight + humanHeight) / 2) {
         this.hitHumans.set(humanKey, this.nextHitIndex);
         this.nextHitIndex = (this.nextHitIndex + 1) % this.hitImages.length;
+        this.levelHit++;
+        this.totalHit++;
+        this.updateHitCounter();
       }
     }
   }
@@ -353,7 +376,6 @@ class Game {
       this.branchChosen = true;
       this.switchActive = false;
       this.updateSwitchUI();
-      // Use user choice if set, otherwise random
       if (this.switchChoice === 'up') {
         this.directionUp = true;
       } else if (this.switchChoice === 'down') {
@@ -363,6 +385,8 @@ class Game {
       }
       // Save the choice for this decision
       this.decisionHistory.push(this.switchChoice);
+      this.levelDecision.push(this.switchChoice);
+      this.updateLog();
     }
 
     // now pick the correct Y offset for wherever we are:
@@ -396,16 +420,22 @@ class Game {
 
     // loop/reset
     if (this.viewportX > this.canvas.width) {
-      this.viewportX = 0;
-      this.trainX = 0;
-      this.branchChosen = false;
-      this.trainVerticalOffset = this.mainOffset;
-      this.hitHumans.clear(); // Reset hit humans on loop
-      this.nextHitIndex = 0; // Reset hit sprite index on loop
-      this.switchChoice = undefined;
-      this.switchActive = false;
-      this.paused = true; // Pause for next round
-      this.updateSwitchUI();
+      this.currentLevel++;
+      if (this.currentLevel < this.levels.length) {
+        this.trainX = 0;
+        this.viewportX = 0;
+        this.branchChosen = false;
+        this.directionUp = false;
+        this.trainVerticalOffset = this.mainOffset;
+        this.levelDecision = this.levelDecision;
+        this.updateLevel();
+      } else {
+        // Game finished
+        this.currentLevel = 0;
+        this.decisionHistory = [];
+        this.levelDecision = [];
+        this.updateLevel();
+      }
     }
   }
 
@@ -493,6 +523,38 @@ class Game {
 
     setArrowState(this.arrowUpBtn, this.arrowUpShape, choice === 'up');
     setArrowState(this.arrowDownBtn, this.arrowDownShape, choice === 'down');
+  }
+
+  updateLevel() {
+    const level = this.levels[this.currentLevel];
+    this.humansMain = level.down;
+    this.humansAlternate = level.up;
+    this.levelHit = 0;
+    this.hitHumans.clear();
+    this.nextHitIndex = 0;
+    this.switchChoice = undefined;
+    this.switchActive = false;
+    this.paused = true;
+    this.updateSwitchUI();
+    this.updateLog();
+  }
+
+  updateHitCounter() {
+    const el = document.getElementById('hit-count');
+    if (el) el.textContent = this.totalHit;
+  }
+
+  updateLog() {
+    const el = document.getElementById('decision-log');
+    if (!el) return;
+    let html = '';
+    for (let i = 0; i < this.levelDecision.length; i++) {
+      const level = this.levels[i];
+      const choice = this.levelDecision[i];
+      html += `<div>Decision ${i+1}: Up = ${level.up}, Down = ${level.down} &rarr; <b>${choice === undefined ? 'Random' : choice.toUpperCase()}</b></div>`;
+    }
+    if (html === '') html = 'No decisions made yet.';
+    el.innerHTML = html;
   }
 }
 

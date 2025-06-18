@@ -13,15 +13,30 @@
         body {
             background-color: #ffffff;
             display: flex;
+            flex-direction: column; /* Arrange children vertically */
             justify-content: center;
             align-items: center;
             min-height: 100vh;
             margin: 0;
         }
+        #game-container {
+            position: relative;
+            display: block;
+            margin-bottom: 20px; /* Add some space between game and info panel */
+        }
+        #info-panel {
+            display: block;
+            width: 100%;
+            position: relative;
+            text-align: center;
+            font-family: sans-serif;
+            z-index: 20;
+            padding: 0 20px; /* Add padding for better spacing */
+        }
     </style>
 </head>
 <body>
-    <div id="game-container" style="position:relative; display:inline-block;">
+    <div id="game-container">
         <canvas id="gameCanvas"></canvas>
         <div id="switch-ui" style="position:absolute; left:20px; bottom:20px; display:flex; align-items:center; z-index:10;">
             <button id="arrow-up" style="background:none; border:none; outline:none; cursor:pointer; margin-right:8px;">
@@ -33,6 +48,10 @@
             </button>
         </div>
     </div>
+    <div id="info-panel">
+        <div id="hit-counter" style="font-size:1.2em; margin-bottom:8px;">Total hit: <span id="hit-count">0</span></div>
+        <div id="decision-log" style="background:#f8f8f8; border:1px solid #ccc; border-radius:6px; padding:10px; min-height:32px; font-size:1em;">Decision log will appear here.</div>
+    </div>
     <script src="game.js"></script>
 </body>
-</html> 
+</html>
