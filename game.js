@@ -67,10 +67,29 @@ class Game {
     this.trainImage = new Image();
     this.trainImage.src = "train.png";
 
+    // Switch UI state
+    this.switchChoice = undefined; // 'up', 'down', or undefined
+    this.switchActive = false; // Only active before the branch
+    this.decisionHistory = []; // Store user choices for each decision
+
+    // UI elements
+    this.arrowUpBtn = document.getElementById('arrow-up');
+    this.arrowDownBtn = document.getElementById('arrow-down');
+    this.arrowUpShape = document.getElementById('arrow-up-shape');
+    this.arrowDownShape = document.getElementById('arrow-down-shape');
+
+    // Bind event handlers
+    this.arrowUpBtn.addEventListener('click', () => this.setSwitch('up'));
+    this.arrowDownBtn.addEventListener('click', () => this.setSwitch('down'));
+    window.addEventListener('keydown', (e) => this.handleKey(e));
+
     // Kick off animation
     this.lastTime = 0;
     this.animate = this.animate.bind(this);
     requestAnimationFrame(this.animate);
+
+    this.paused = true; // Start paused until user chooses
+    this.updateSwitchUI(); // Ensure UI is correct on load
   }
 
   // ——— Helper: raw rail Y in world-space, *before* sprite adjustment ———
@@ -319,12 +338,31 @@ class Game {
   }
 
   update(deltaTime) {
+    if (this.paused) return; // Do nothing if paused
     this.viewportX += this.trainSpeed;
     this.trainX += this.trainSpeed;
 
+    // Activate switch UI before the branch
+    if (!this.branchChosen && this.trainX >= this.jointStart - 40 && this.trainX < this.jointStart) {
+      this.switchActive = true;
+      this.updateSwitchUI();
+    }
+
+    // Deactivate switch UI after branch is chosen
     if (!this.branchChosen && this.trainX >= this.jointStart) {
       this.branchChosen = true;
-      this.directionUp = Math.random() < 0.5;
+      this.switchActive = false;
+      this.updateSwitchUI();
+      // Use user choice if set, otherwise random
+      if (this.switchChoice === 'up') {
+        this.directionUp = true;
+      } else if (this.switchChoice === 'down') {
+        this.directionUp = false;
+      } else {
+        this.directionUp = Math.random() < 0.5;
+      }
+      // Save the choice for this decision
+      this.decisionHistory.push(this.switchChoice);
     }
 
     // now pick the correct Y offset for wherever we are:
@@ -364,6 +402,10 @@ class Game {
       this.trainVerticalOffset = this.mainOffset;
       this.hitHumans.clear(); // Reset hit humans on loop
       this.nextHitIndex = 0; // Reset hit sprite index on loop
+      this.switchChoice = undefined;
+      this.switchActive = false;
+      this.paused = true; // Pause for next round
+      this.updateSwitchUI();
     }
   }
 
@@ -403,6 +445,54 @@ class Game {
     const y = ay * Math.pow(t, 3) + by * Math.pow(t, 2) + cy * t + p0.y;
     
     return { x, y };
+  }
+
+  setSwitch(choice) {
+    if (!(this.switchActive || this.paused)) return;
+    this.switchChoice = choice;
+    this.updateSwitchUI();
+    if (this.paused) {
+      this.paused = false;
+      this.switchActive = false;
+      this.updateSwitchUI();
+    }
+  }
+
+  handleKey(e) {
+    if ((!this.switchActive && !this.paused)) return;
+    if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
+      this.setSwitch('up');
+    } else if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') {
+      this.setSwitch('down');
+    }
+  }
+
+  updateSwitchUI() {
+    const isInteractable = this.switchActive || this.paused;
+    const choice = this.switchChoice;
+
+    function setArrowState(btn, shape, isSelected) {
+      if (isInteractable) {
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        shape.setAttribute('fill', isSelected ? '#4caf50' : '#bbb');
+      } else {
+        btn.disabled = true;
+        if (choice === undefined) {
+          btn.style.opacity = '0.5';
+          shape.setAttribute('fill', '#eee');
+        } else if (isSelected) {
+          btn.style.opacity = '1';
+          shape.setAttribute('fill', '#4caf50');
+        } else {
+          btn.style.opacity = '0.5';
+          shape.setAttribute('fill', '#888');
+        }
+      }
+    }
+
+    setArrowState(this.arrowUpBtn, this.arrowUpShape, choice === 'up');
+    setArrowState(this.arrowDownBtn, this.arrowDownShape, choice === 'down');
   }
 }
 

@@ -11,7 +11,7 @@
             margin: 0 auto;
         }
         body {
-            background-color: #f0f0f0;
+            background-color: #ffffff;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -21,7 +21,18 @@
     </style>
 </head>
 <body>
-    <canvas id="gameCanvas"></canvas>
+    <div id="game-container" style="position:relative; display:inline-block;">
+        <canvas id="gameCanvas"></canvas>
+        <div id="switch-ui" style="position:absolute; left:20px; bottom:20px; display:flex; align-items:center; z-index:10;">
+            <button id="arrow-up" style="background:none; border:none; outline:none; cursor:pointer; margin-right:8px;">
+                <svg width="64" height="64" viewBox="0 0 32 32"><polygon id="arrow-up-shape" points="16,4 28,28 4,28" fill="#bbb"/></svg>
+            </button>
+            <img id="switch-sprite" src="switch.png" alt="Switch" style="width:128px; height:auto; margin:0 8px;" />
+            <button id="arrow-down" style="background:none; border:none; outline:none; cursor:pointer; margin-left:8px;">
+                <svg width="64" height="64" viewBox="0 0 32 32"><polygon id="arrow-down-shape" points="4,4 28,4 16,28" fill="#bbb"/></svg>
+            </button>
+        </div>
+    </div>
     <script src="game.js"></script>
 </body>
 </html> 
