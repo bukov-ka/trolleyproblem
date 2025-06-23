@@ -50,3 +50,6 @@ As soon as the train reaches the first diagonal start (X≈155), we randomly pic
 
 Continuous Loop
 After X exceeds the canvas width, everything resets: train back on main track, new random choice on the next pass, and all hit humans return to normal state.
+
+There are two 'arrows' buttons at the bottom (up and down) to choose the train path.
+There is also a 'Skip level' button below the level indicator on the left, which allows the player to skip the current decision and immediately advance to the next level. If skipped, the decision is recorded as 'undefined' if no choice was made.
