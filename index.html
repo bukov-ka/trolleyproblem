@@ -39,6 +39,10 @@
     <div id="game-container">
         <canvas id="gameCanvas"></canvas>
         <div id="switch-ui" style="position:absolute; left:20px; bottom:20px; display:flex; align-items:center; z-index:10;">
+            <div style="display:flex; flex-direction:column; align-items:flex-start; margin-right:16px;">
+                <span id="level-indicator" style="font-size:1em; margin-bottom:6px; color:#333;">Level 1 out of 8</span>
+                <button id="skip-btn" style="background:none; border:1px solid #888; outline:none; cursor:pointer; padding:8px 16px; border-radius:6px; font-size:1em; color:#333; background-color:#f0f0f0;">Skip level</button>
+            </div>
             <button id="arrow-up" style="background:none; border:none; outline:none; cursor:pointer; margin-right:8px;">
                 <svg width="64" height="64" viewBox="0 0 32 32"><polygon id="arrow-up-shape" points="16,4 28,28 4,28" fill="#bbb"/></svg>
             </button>

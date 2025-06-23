@@ -77,10 +77,12 @@ class Game {
     this.arrowDownBtn = document.getElementById('arrow-down');
     this.arrowUpShape = document.getElementById('arrow-up-shape');
     this.arrowDownShape = document.getElementById('arrow-down-shape');
+    this.skipBtn = document.getElementById('skip-btn');
 
     // Bind event handlers
     this.arrowUpBtn.addEventListener('click', () => this.setSwitch('up'));
     this.arrowDownBtn.addEventListener('click', () => this.setSwitch('down'));
+    this.skipBtn.addEventListener('click', () => this.skipLevel());
     window.addEventListener('keydown', (e) => this.handleKey(e));
 
     // Kick off animation
@@ -537,6 +539,14 @@ class Game {
     this.paused = true;
     this.updateSwitchUI();
     this.updateLog();
+    this.updateLevelIndicator();
+  }
+
+  updateLevelIndicator() {
+    const el = document.getElementById('level-indicator');
+    if (el) {
+      el.textContent = `Level ${this.currentLevel + 1} out of ${this.levels.length}`;
+    }
   }
 
   updateHitCounter() {
@@ -555,6 +565,35 @@ class Game {
     }
     if (html === '') html = 'No decisions made yet.';
     el.innerHTML = html;
+  }
+
+  skipLevel() {
+    // If already at the last level, just reset
+    if (this.currentLevel >= this.levels.length - 1) {
+      this.currentLevel = 0;
+      this.decisionHistory = [];
+      this.levelDecision = [];
+      this.updateLevel();
+      return;
+    }
+    // If paused and no choice made, save undefined as the decision
+    if (this.paused && this.switchChoice === undefined) {
+      this.decisionHistory.push(undefined);
+      this.levelDecision.push(undefined);
+      this.updateLog();
+    } else if (this.paused && this.switchChoice !== undefined) {
+      this.decisionHistory.push(this.switchChoice);
+      this.levelDecision.push(this.switchChoice);
+      this.updateLog();
+    }
+    this.currentLevel++;
+    this.trainX = 0;
+    this.viewportX = 0;
+    this.branchChosen = false;
+    this.directionUp = false;
+    this.trainVerticalOffset = this.mainOffset;
+    this.updateLevel();
+    this.updateLevelIndicator();
   }
 }
 
