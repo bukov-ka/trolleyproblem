@@ -24,6 +24,8 @@ The trolley problem is a series of thought experiments in ethics and psychology,
 
 ## Play Online
 
+🎮 **[Play the game here](https://bukov-ka.github.io/trolleyproblem/)**
+
 The game is hosted on GitHub Pages and can be played directly in your browser.
 
 ## Technical Details
