@@ -656,7 +656,6 @@ class Game {
   }
 
   async showResults() {
-    console.log("showResults function called!");
     if (this.showingResults) return;
     this.showingResults = true;
     // Dynamically import analyzer.js and run analysis
