@@ -102,13 +102,18 @@ class Game {
       { up: 5, down: 5 },
       { up: 0, down: 0 },
       { up: 1, down: 0 },
-      { up: 0, down: 1 }
+      { up: 0, down: 1 },
+      {top: 1, bottom: 5, topTag: '❤️'},
+      {top: 0, bottom: 1},
+      {top: 2, bottom: 2},
     ];
     this.currentLevel = 0;
     this.totalHit = 0;
     this.levelHit = 0;
     this.levelDecision = [];
     this.updateLevel();
+
+    this.showingResults = false;
   }
 
   // ——— Helper: raw rail Y in world-space, *before* sprite adjustment ———
@@ -258,6 +263,30 @@ class Game {
       this.drawHuman(x, y, true);
     }
 
+    // Draw tags if present
+    ctx.font = 'bold 22px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.fillStyle = '#222';
+    // Main track (bottom)
+    if (this.bottomTag) {
+      const x = branchCenterX - this.canvas.width / 2;
+      const y = this.railMainY + this.trainAdjustment + this.verticalOffset - 10;
+      ctx.save();
+      ctx.rotate((-this.railAngle * Math.PI) / 180);
+      ctx.fillText(this.bottomTag, x, y);
+      ctx.restore();
+    }
+    // Branch track (top)
+    if (this.topTag) {
+      const x = branchCenterX - this.canvas.width / 2;
+      const y = this.branchTopY + this.trainAdjustment + this.verticalOffset - 10;
+      ctx.save();
+      ctx.rotate((-this.railAngle * Math.PI) / 180);
+      ctx.fillText(this.topTag, x, y);
+      ctx.restore();
+    }
+
     ctx.restore();
   }
 
@@ -363,6 +392,7 @@ class Game {
   }
 
   update(deltaTime) {
+    if (this.showingResults) return;
     if (this.paused) return; // Do nothing if paused
     this.viewportX += this.trainSpeed;
     this.trainX += this.trainSpeed;
@@ -422,22 +452,7 @@ class Game {
 
     // loop/reset
     if (this.viewportX > this.canvas.width) {
-      this.currentLevel++;
-      if (this.currentLevel < this.levels.length) {
-        this.trainX = 0;
-        this.viewportX = 0;
-        this.branchChosen = false;
-        this.directionUp = false;
-        this.trainVerticalOffset = this.mainOffset;
-        this.levelDecision = this.levelDecision;
-        this.updateLevel();
-      } else {
-        // Game finished
-        this.currentLevel = 0;
-        this.decisionHistory = [];
-        this.levelDecision = [];
-        this.updateLevel();
-      }
+      this.advanceLevel();
     }
   }
 
@@ -456,6 +471,7 @@ class Game {
   }
 
   animate(currentTime) {
+    if (this.showingResults) return;
     const deltaTime = currentTime - this.lastTime;
     this.lastTime = currentTime;
     this.update(deltaTime);
@@ -529,8 +545,11 @@ class Game {
 
   updateLevel() {
     const level = this.levels[this.currentLevel];
-    this.humansMain = level.down;
-    this.humansAlternate = level.up;
+    // Support both {up, down} and {top, bottom}
+    this.humansMain = level.down !== undefined ? level.down : level.bottom;
+    this.humansAlternate = level.up !== undefined ? level.up : level.top;
+    this.bottomTag = level.downTag !== undefined ? level.downTag : (level.bottomTag !== undefined ? level.bottomTag : undefined);
+    this.topTag = level.upTag !== undefined ? level.upTag : (level.topTag !== undefined ? level.topTag : undefined);
     this.levelHit = 0;
     this.hitHumans.clear();
     this.nextHitIndex = 0;
@@ -567,16 +586,23 @@ class Game {
     el.innerHTML = html;
   }
 
-  skipLevel() {
-    // If already at the last level, just reset
-    if (this.currentLevel >= this.levels.length - 1) {
-      this.currentLevel = 0;
-      this.decisionHistory = [];
-      this.levelDecision = [];
+  advanceLevel() {
+    this.currentLevel++;
+    if (this.currentLevel < this.levels.length) {
+      this.trainX = 0;
+      this.viewportX = 0;
+      this.branchChosen = false;
+      this.directionUp = false;
+      this.trainVerticalOffset = this.mainOffset;
       this.updateLevel();
-      return;
+      this.updateLevelIndicator();
+    } else {
+      this.showResults();
     }
-    // If paused and no choice made, save undefined as the decision
+  }
+
+  skipLevel() {
+    // Record the skipped decision
     if (this.paused && this.switchChoice === undefined) {
       this.decisionHistory.push(undefined);
       this.levelDecision.push(undefined);
@@ -586,14 +612,65 @@ class Game {
       this.levelDecision.push(this.switchChoice);
       this.updateLog();
     }
-    this.currentLevel++;
-    this.trainX = 0;
-    this.viewportX = 0;
-    this.branchChosen = false;
-    this.directionUp = false;
-    this.trainVerticalOffset = this.mainOffset;
-    this.updateLevel();
-    this.updateLevelIndicator();
+    this.advanceLevel();
+  }
+
+  async showResults() {
+    console.log("showResults function called!");
+    if (this.showingResults) return;
+    this.showingResults = true;
+    // Dynamically import analyzer.js and run analysis
+    const module = await import('./analyzer.js');
+    // Prepare decisions in the expected format
+    const decisions = this.levels.slice(0, this.levelDecision.length).map((level, i) => {
+      const choiceRaw = this.levelDecision[i];
+      let choice, autoPath;
+      if (choiceRaw === 'up') choice = 'T';
+      else if (choiceRaw === 'down') choice = 'B';
+      else choice = 'U';
+      if (choice === 'U') autoPath = Math.random() < 0.5 ? 'T' : 'B';
+      return {
+        choice,
+        autoPath,
+        up: level.up ?? level.top ?? 0,
+        down: level.down ?? level.bottom ?? 0,
+        top: level.top ?? level.up ?? 0,
+        bottom: level.bottom ?? level.down ?? 0
+      };
+    });
+    const result = module.analyseRun(decisions);
+    // Show modal
+    const modal = document.getElementById('result-modal');
+    if (!modal) {
+      alert(result.summary + '\nLives lost: ' + result.livesLost + '\nLives saved: ' + result.livesSaved + '\nAgency: ' + result.agency + '\nCompassion: ' + result.compassion);
+      this.currentLevel = 0;
+      this.decisionHistory = [];
+      this.levelDecision = [];
+      this.totalHit = 0;
+      this.updateLevel();
+      this.updateHitCounter();
+      this.showingResults = false;
+      return;
+    }
+    document.getElementById('result-title').textContent = result.verdict;
+    document.getElementById('result-summary').textContent = result.summary;
+    document.getElementById('result-details').innerHTML =
+      `<b>Lives lost:</b> ${result.livesLost}<br>` +
+      `<b>Lives saved:</b> ${result.potentialSaved}<br>` +
+      `<b>Agency:</b> ${result.agency}<br>` +
+      `<b>Compassion:</b> ${result.compassion}`;
+    modal.classList.add('modal-visible');
+    // Close button
+    document.getElementById('result-close').onclick = () => {
+      modal.classList.remove('modal-visible');
+      this.currentLevel = 0;
+      this.decisionHistory = [];
+      this.levelDecision = [];
+      this.totalHit = 0;
+      this.updateLevel();
+      this.updateHitCounter();
+      this.showingResults = false;
+    };
   }
 }
 

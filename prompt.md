@@ -45,9 +45,6 @@ Train and Collision
 - Hit zone is positioned at trainWidth/4 - 15 pixels from train center
 - Collisions only occur when train is on the correct track (main or branch)
 
-Random Path Choice
-As soon as the train reaches the first diagonal start (X≈155), we randomly pick "up" or "down" and interpolate along the connector onto the branch. At the second diagonal (X≈400), we interpolate back to the main rails.
-
 Continuous Loop
 After X exceeds the canvas width, everything resets: train back on main track, new random choice on the next pass, and all hit humans return to normal state.
 
