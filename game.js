@@ -8,7 +8,7 @@ class Game {
     this.canvas.height = 600;
 
     // Game parameters
-    this.trainSpeed = 2;
+    this.trainSpeed = 500;
     this.railDistance = 30; // vertical gap between rails
     this.railAngle = 18; // tilt for 2.5D
     this.mainOffset = -35;
@@ -419,8 +419,13 @@ class Game {
   update(deltaTime) {
     if (this.showingResults) return;
     if (this.paused) return; // Do nothing if paused
-    this.viewportX += this.trainSpeed;
-    this.trainX += this.trainSpeed;
+    
+    // Convert deltaTime from milliseconds to seconds and apply train speed
+    const deltaSeconds = deltaTime / 1000;
+    const distanceToMove = this.trainSpeed * deltaSeconds;
+    
+    this.viewportX += distanceToMove;
+    this.trainX += distanceToMove;
 
     // Activate switch UI before the branch
     if (
