@@ -73,17 +73,17 @@ class Game {
     this.decisionHistory = []; // Store user choices for each decision
 
     // UI elements
-    this.arrowUpBtn = document.getElementById('arrow-up');
-    this.arrowDownBtn = document.getElementById('arrow-down');
-    this.arrowUpShape = document.getElementById('arrow-up-shape');
-    this.arrowDownShape = document.getElementById('arrow-down-shape');
-    this.skipBtn = document.getElementById('skip-btn');
+    this.arrowUpBtn = document.getElementById("arrow-up");
+    this.arrowDownBtn = document.getElementById("arrow-down");
+    this.arrowUpShape = document.getElementById("arrow-up-shape");
+    this.arrowDownShape = document.getElementById("arrow-down-shape");
+    this.skipBtn = document.getElementById("skip-btn");
 
     // Bind event handlers
-    this.arrowUpBtn.addEventListener('click', () => this.setSwitch('up'));
-    this.arrowDownBtn.addEventListener('click', () => this.setSwitch('down'));
-    this.skipBtn.addEventListener('click', () => this.skipLevel());
-    window.addEventListener('keydown', (e) => this.handleKey(e));
+    this.arrowUpBtn.addEventListener("click", () => this.setSwitch("up"));
+    this.arrowDownBtn.addEventListener("click", () => this.setSwitch("down"));
+    this.skipBtn.addEventListener("click", () => this.skipLevel());
+    window.addEventListener("keydown", (e) => this.handleKey(e));
 
     // Kick off animation
     this.lastTime = 0;
@@ -103,9 +103,9 @@ class Game {
       { up: 0, down: 0 },
       { up: 1, down: 0 },
       { up: 0, down: 1 },
-      {top: 1, bottom: 5, topTag: '❤️'},
-      {top: 0, bottom: 1},
-      {top: 2, bottom: 2},
+      { top: 1, bottom: 5, topTag: "❤️" },
+      { top: 0, bottom: 1 },
+      { top: 2, bottom: 2 },
     ];
     this.currentLevel = 0;
     this.totalHit = 0;
@@ -130,12 +130,12 @@ class Game {
     if (x < this.seg0) {
       const t = (x - this.jointStart) / (this.seg0 - this.jointStart);
       const controlPointOffset = this.switchLength * 0.5;
-      
+
       const p0 = { x: this.jointStart, y: mainY };
       const p1 = { x: this.jointStart + controlPointOffset, y: mainY };
       const p2 = { x: this.seg0 - controlPointOffset, y: branchY };
       const p3 = { x: this.seg0, y: branchY };
-      
+
       const point = this.bezierPoint(p0, p1, p2, p3, t);
       return point.y;
     }
@@ -147,12 +147,12 @@ class Game {
     if (x < this.jointEnd) {
       const t = (x - this.seg1) / (this.jointEnd - this.seg1);
       const controlPointOffset = this.switchLength * 0.5;
-      
+
       const p0 = { x: this.seg1, y: branchY };
       const p1 = { x: this.seg1 + controlPointOffset, y: branchY };
       const p2 = { x: this.jointEnd - controlPointOffset, y: mainY };
       const p3 = { x: this.jointEnd, y: mainY };
-      
+
       const point = this.bezierPoint(p0, p1, p2, p3, t);
       return point.y;
     }
@@ -199,9 +199,12 @@ class Game {
     ctx.beginPath();
     ctx.moveTo(jointX, -d);
     ctx.bezierCurveTo(
-      jointX + controlPointOffset, -d,
-      seg0 - controlPointOffset, upperY - d,
-      seg0, upperY - d
+      jointX + controlPointOffset,
+      -d,
+      seg0 - controlPointOffset,
+      upperY - d,
+      seg0,
+      upperY - d
     );
     ctx.stroke();
 
@@ -209,9 +212,12 @@ class Game {
     ctx.beginPath();
     ctx.moveTo(jointX, d);
     ctx.bezierCurveTo(
-      jointX + controlPointOffset, d,
-      seg0 - controlPointOffset, upperY + d,
-      seg0, upperY + d
+      jointX + controlPointOffset,
+      d,
+      seg0 - controlPointOffset,
+      upperY + d,
+      seg0,
+      upperY + d
     );
     ctx.stroke();
 
@@ -223,9 +229,12 @@ class Game {
     ctx.beginPath();
     ctx.moveTo(mergeStartX, upperY - d);
     ctx.bezierCurveTo(
-      mergeStartX + controlPointOffset, upperY - d,
-      mergeJointX - controlPointOffset, -d,
-      mergeJointX, -d
+      mergeStartX + controlPointOffset,
+      upperY - d,
+      mergeJointX - controlPointOffset,
+      -d,
+      mergeJointX,
+      -d
     );
     ctx.stroke();
 
@@ -233,9 +242,12 @@ class Game {
     ctx.beginPath();
     ctx.moveTo(mergeStartX, upperY + d);
     ctx.bezierCurveTo(
-      mergeStartX + controlPointOffset, upperY + d,
-      mergeJointX - controlPointOffset, d,
-      mergeJointX, d
+      mergeStartX + controlPointOffset,
+      upperY + d,
+      mergeJointX - controlPointOffset,
+      d,
+      mergeJointX,
+      d
     );
     ctx.stroke();
   }
@@ -246,9 +258,10 @@ class Game {
 
     // Calculate center of branch segment
     const branchCenterX = this.seg0 + (this.seg1 - this.seg0) / 2;
-    
+
     // Draw humans on main track - centered around branch segment
-    const mainStartX = branchCenterX - (this.humansMain * this.humanSpacing) / 2;
+    const mainStartX =
+      branchCenterX - (this.humansMain * this.humanSpacing) / 2;
     for (let i = 0; i < this.humansMain; i++) {
       const x = mainStartX + i * this.humanSpacing;
       const y = this.railMainY + this.trainAdjustment + this.verticalOffset;
@@ -256,7 +269,8 @@ class Game {
     }
 
     // Draw humans on branch track - centered around branch segment
-    const branchStartX = branchCenterX - (this.humansAlternate * this.humanSpacing) / 2;
+    const branchStartX =
+      branchCenterX - (this.humansAlternate * this.humanSpacing) / 2;
     for (let i = 0; i < this.humansAlternate; i++) {
       const x = branchStartX + i * this.humanSpacing;
       const y = this.branchTopY + this.trainAdjustment + this.verticalOffset;
@@ -264,14 +278,15 @@ class Game {
     }
 
     // Draw tags if present
-    ctx.font = 'bold 22px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'bottom';
-    ctx.fillStyle = '#222';
+    ctx.font = "bold 22px sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "bottom";
+    ctx.fillStyle = "#222";
     // Main track (bottom)
     if (this.bottomTag) {
       const x = branchCenterX - this.canvas.width / 2;
-      const y = this.railMainY + this.trainAdjustment + this.verticalOffset - 10;
+      const y =
+        this.railMainY + this.trainAdjustment + this.verticalOffset - 10;
       ctx.save();
       ctx.rotate((-this.railAngle * Math.PI) / 180);
       ctx.fillText(this.bottomTag, x, y);
@@ -280,7 +295,8 @@ class Game {
     // Branch track (top)
     if (this.topTag) {
       const x = branchCenterX - this.canvas.width / 2;
-      const y = this.branchTopY + this.trainAdjustment + this.verticalOffset - 10;
+      const y =
+        this.branchTopY + this.trainAdjustment + this.verticalOffset - 10;
       ctx.save();
       ctx.rotate((-this.railAngle * Math.PI) / 180);
       ctx.fillText(this.topTag, x, y);
@@ -294,22 +310,23 @@ class Game {
     const ctx = this.ctx;
     const humanKey = `${x},${y},${isOnBranch}`;
     const hitIndex = this.hitHumans.get(humanKey);
-    
+
     ctx.save();
     ctx.translate(x - this.canvas.width / 2, y);
     ctx.rotate((-this.railAngle * Math.PI) / 180);
-    
-    const img = hitIndex !== undefined ? this.hitImages[hitIndex] : this.humanImages[0];
+
+    const img =
+      hitIndex !== undefined ? this.hitImages[hitIndex] : this.humanImages[0];
     // Scale down the human sprites to 50% of their original size
     const scale = 0.5;
     ctx.drawImage(
-      img, 
-      -img.width * scale / 2, 
-      -img.height * scale / 2,
+      img,
+      (-img.width * scale) / 2,
+      (-img.height * scale) / 2,
       img.width * scale,
       img.height * scale
     );
-    
+
     ctx.restore();
   }
 
@@ -351,42 +368,50 @@ class Game {
     const branchCenterX = this.seg0 + (this.seg1 - this.seg0) / 2;
 
     // Check main track humans
-    const mainStartX = branchCenterX - (this.humansMain * this.humanSpacing) / 2;
+    const mainStartX =
+      branchCenterX - (this.humansMain * this.humanSpacing) / 2;
     for (let i = 0; i < this.humansMain; i++) {
       const x = mainStartX + i * this.humanSpacing;
       const y = this.railMainY + this.trainAdjustment + this.verticalOffset;
       const humanKey = `${x},${y},false`;
-      
+
       // Only check collision if we're on the main track
-      if (!this.hitHumans.has(humanKey) && 
-          !this.directionUp && // Only check if we're on main track
-          Math.abs(this.trainX + hitZoneOffsetX - x) < (hitZoneWidth + humanWidth) / 2 &&
-          Math.abs(this.trainVerticalOffset + hitZoneOffsetY - y) < (hitZoneHeight + humanHeight) / 2) {
+      if (
+        !this.hitHumans.has(humanKey) &&
+        !this.directionUp && // Only check if we're on main track
+        Math.abs(this.trainX + hitZoneOffsetX - x) <
+          (hitZoneWidth + humanWidth) / 2 &&
+        Math.abs(this.trainVerticalOffset + hitZoneOffsetY - y) <
+          (hitZoneHeight + humanHeight) / 2
+      ) {
         this.hitHumans.set(humanKey, this.nextHitIndex);
         this.nextHitIndex = (this.nextHitIndex + 1) % this.hitImages.length;
         this.levelHit++;
         this.totalHit++;
-        this.updateHitCounter();
       }
     }
 
     // Check branch humans
-    const branchStartX = branchCenterX - (this.humansAlternate * this.humanSpacing) / 2;
+    const branchStartX =
+      branchCenterX - (this.humansAlternate * this.humanSpacing) / 2;
     for (let i = 0; i < this.humansAlternate; i++) {
       const x = branchStartX + i * this.humanSpacing;
       const y = this.branchTopY + this.trainAdjustment + this.verticalOffset;
       const humanKey = `${x},${y},true`;
-      
+
       // Only check collision if we're on the branch track
-      if (!this.hitHumans.has(humanKey) && 
-          this.directionUp && // Only check if we're on branch track
-          Math.abs(this.trainX + hitZoneOffsetX - x) < (hitZoneWidth + humanWidth) / 2 &&
-          Math.abs(this.trainVerticalOffset + hitZoneOffsetY - y) < (hitZoneHeight + humanHeight) / 2) {
+      if (
+        !this.hitHumans.has(humanKey) &&
+        this.directionUp && // Only check if we're on branch track
+        Math.abs(this.trainX + hitZoneOffsetX - x) <
+          (hitZoneWidth + humanWidth) / 2 &&
+        Math.abs(this.trainVerticalOffset + hitZoneOffsetY - y) <
+          (hitZoneHeight + humanHeight) / 2
+      ) {
         this.hitHumans.set(humanKey, this.nextHitIndex);
         this.nextHitIndex = (this.nextHitIndex + 1) % this.hitImages.length;
         this.levelHit++;
         this.totalHit++;
-        this.updateHitCounter();
       }
     }
   }
@@ -398,7 +423,11 @@ class Game {
     this.trainX += this.trainSpeed;
 
     // Activate switch UI before the branch
-    if (!this.branchChosen && this.trainX >= this.jointStart - 40 && this.trainX < this.jointStart) {
+    if (
+      !this.branchChosen &&
+      this.trainX >= this.jointStart - 40 &&
+      this.trainX < this.jointStart
+    ) {
       this.switchActive = true;
       this.updateSwitchUI();
     }
@@ -408,9 +437,9 @@ class Game {
       this.branchChosen = true;
       this.switchActive = false;
       this.updateSwitchUI();
-      if (this.switchChoice === 'up') {
+      if (this.switchChoice === "up") {
         this.directionUp = true;
-      } else if (this.switchChoice === 'down') {
+      } else if (this.switchChoice === "down") {
         this.directionUp = false;
       } else {
         this.directionUp = Math.random() < 0.5;
@@ -484,14 +513,14 @@ class Game {
     const cx = 3 * (p1.x - p0.x);
     const bx = 3 * (p2.x - p1.x) - cx;
     const ax = p3.x - p0.x - cx - bx;
-    
+
     const cy = 3 * (p1.y - p0.y);
     const by = 3 * (p2.y - p1.y) - cy;
     const ay = p3.y - p0.y - cy - by;
-    
+
     const x = ax * Math.pow(t, 3) + bx * Math.pow(t, 2) + cx * t + p0.x;
     const y = ay * Math.pow(t, 3) + by * Math.pow(t, 2) + cy * t + p0.y;
-    
+
     return { x, y };
   }
 
@@ -507,11 +536,11 @@ class Game {
   }
 
   handleKey(e) {
-    if ((!this.switchActive && !this.paused)) return;
-    if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
-      this.setSwitch('up');
-    } else if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') {
-      this.setSwitch('down');
+    if (!this.switchActive && !this.paused) return;
+    if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") {
+      this.setSwitch("up");
+    } else if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") {
+      this.setSwitch("down");
     }
   }
 
@@ -522,25 +551,25 @@ class Game {
     function setArrowState(btn, shape, isSelected) {
       if (isInteractable) {
         btn.disabled = false;
-        btn.style.opacity = '1';
-        shape.setAttribute('fill', isSelected ? '#4caf50' : '#bbb');
+        btn.style.opacity = "1";
+        shape.setAttribute("fill", isSelected ? "#4caf50" : "#bbb");
       } else {
         btn.disabled = true;
         if (choice === undefined) {
-          btn.style.opacity = '0.5';
-          shape.setAttribute('fill', '#eee');
+          btn.style.opacity = "0.5";
+          shape.setAttribute("fill", "#eee");
         } else if (isSelected) {
-          btn.style.opacity = '1';
-          shape.setAttribute('fill', '#4caf50');
+          btn.style.opacity = "1";
+          shape.setAttribute("fill", "#4caf50");
         } else {
-          btn.style.opacity = '0.5';
-          shape.setAttribute('fill', '#888');
+          btn.style.opacity = "0.5";
+          shape.setAttribute("fill", "#888");
         }
       }
     }
 
-    setArrowState(this.arrowUpBtn, this.arrowUpShape, choice === 'up');
-    setArrowState(this.arrowDownBtn, this.arrowDownShape, choice === 'down');
+    setArrowState(this.arrowUpBtn, this.arrowUpShape, choice === "up");
+    setArrowState(this.arrowDownBtn, this.arrowDownShape, choice === "down");
   }
 
   updateLevel() {
@@ -548,8 +577,18 @@ class Game {
     // Support both {up, down} and {top, bottom}
     this.humansMain = level.down !== undefined ? level.down : level.bottom;
     this.humansAlternate = level.up !== undefined ? level.up : level.top;
-    this.bottomTag = level.downTag !== undefined ? level.downTag : (level.bottomTag !== undefined ? level.bottomTag : undefined);
-    this.topTag = level.upTag !== undefined ? level.upTag : (level.topTag !== undefined ? level.topTag : undefined);
+    this.bottomTag =
+      level.downTag !== undefined
+        ? level.downTag
+        : level.bottomTag !== undefined
+        ? level.bottomTag
+        : undefined;
+    this.topTag =
+      level.upTag !== undefined
+        ? level.upTag
+        : level.topTag !== undefined
+        ? level.topTag
+        : undefined;
     this.levelHit = 0;
     this.hitHumans.clear();
     this.nextHitIndex = 0;
@@ -562,27 +601,28 @@ class Game {
   }
 
   updateLevelIndicator() {
-    const el = document.getElementById('level-indicator');
+    const el = document.getElementById("level-indicator");
     if (el) {
-      el.textContent = `Level ${this.currentLevel + 1} out of ${this.levels.length}`;
+      el.textContent = `Level ${this.currentLevel + 1} out of ${
+        this.levels.length
+      }`;
     }
-  }
-
-  updateHitCounter() {
-    const el = document.getElementById('hit-count');
-    if (el) el.textContent = this.totalHit;
   }
 
   updateLog() {
-    const el = document.getElementById('decision-log');
+    const el = document.getElementById("decision-log");
     if (!el) return;
-    let html = '';
+    let html = "";
     for (let i = 0; i < this.levelDecision.length; i++) {
       const level = this.levels[i];
       const choice = this.levelDecision[i];
-      html += `<div>Decision ${i+1}: Up = ${level.up}, Down = ${level.down} &rarr; <b>${choice === undefined ? 'Random' : choice.toUpperCase()}</b></div>`;
+      html += `<div>Decision ${i + 1}: Up = ${level.up}, Down = ${
+        level.down
+      } &rarr; <b>${
+        choice === undefined ? "Random" : choice.toUpperCase()
+      }</b></div>`;
     }
-    if (html === '') html = 'No decisions made yet.';
+    if (html === "") html = "No decisions made yet.";
     el.innerHTML = html;
   }
 
@@ -620,55 +660,65 @@ class Game {
     if (this.showingResults) return;
     this.showingResults = true;
     // Dynamically import analyzer.js and run analysis
-    const module = await import('./analyzer.js');
+    const module = await import("./analyzer.js");
     // Prepare decisions in the expected format
-    const decisions = this.levels.slice(0, this.levelDecision.length).map((level, i) => {
-      const choiceRaw = this.levelDecision[i];
-      let choice, autoPath;
-      if (choiceRaw === 'up') choice = 'T';
-      else if (choiceRaw === 'down') choice = 'B';
-      else choice = 'U';
-      if (choice === 'U') autoPath = Math.random() < 0.5 ? 'T' : 'B';
-      return {
-        choice,
-        autoPath,
-        up: level.up ?? level.top ?? 0,
-        down: level.down ?? level.bottom ?? 0,
-        top: level.top ?? level.up ?? 0,
-        bottom: level.bottom ?? level.down ?? 0
-      };
-    });
+    const decisions = this.levels
+      .slice(0, this.levelDecision.length)
+      .map((level, i) => {
+        const choiceRaw = this.levelDecision[i];
+        let choice, autoPath;
+        if (choiceRaw === "up") choice = "T";
+        else if (choiceRaw === "down") choice = "B";
+        else choice = "U";
+        if (choice === "U") autoPath = Math.random() < 0.5 ? "T" : "B";
+        return {
+          choice,
+          autoPath,
+          up: level.up ?? level.top ?? 0,
+          down: level.down ?? level.bottom ?? 0,
+          top: level.top ?? level.up ?? 0,
+          bottom: level.bottom ?? level.down ?? 0,
+        };
+      });
     const result = module.analyseRun(decisions);
     // Show modal
-    const modal = document.getElementById('result-modal');
+    const modal = document.getElementById("result-modal");
     if (!modal) {
-      alert(result.summary + '\nLives lost: ' + result.livesLost + '\nLives saved: ' + result.livesSaved + '\nAgency: ' + result.agency + '\nCompassion: ' + result.compassion);
+      alert(
+        result.summary +
+          "\nLives lost: " +
+          result.livesLost +
+          "\nLives saved: " +
+          result.livesSaved +
+          "\nAgency: " +
+          result.agency +
+          "\nCompassion: " +
+          result.compassion
+      );
       this.currentLevel = 0;
       this.decisionHistory = [];
       this.levelDecision = [];
       this.totalHit = 0;
       this.updateLevel();
-      this.updateHitCounter();
       this.showingResults = false;
       return;
     }
-    document.getElementById('result-title').textContent = result.verdict;
-    document.getElementById('result-summary').textContent = result.summary;
-    document.getElementById('result-details').innerHTML =
+    document.getElementById("result-title").textContent = result.verdict;
+    document.getElementById("result-summary").textContent = result.summary;
+    document.getElementById("result-details").innerHTML =
       `<b>Lives lost:</b> ${result.livesLost}<br>` +
       `<b>Lives saved:</b> ${result.potentialSaved}<br>` +
       `<b>Agency:</b> ${result.agency}<br>` +
       `<b>Compassion:</b> ${result.compassion}`;
-    modal.classList.add('modal-visible');
+    modal.classList.add("modal-visible");
     // Close button
-    document.getElementById('result-close').onclick = () => {
-      modal.classList.remove('modal-visible');
+    document.getElementById("result-close").onclick = () => {
+      modal.classList.remove("modal-visible");
       this.currentLevel = 0;
       this.decisionHistory = [];
       this.levelDecision = [];
       this.totalHit = 0;
       this.updateLevel();
-      this.updateHitCounter();
       this.showingResults = false;
     };
   }

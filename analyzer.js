@@ -1,15 +1,15 @@
 /* trolley-analyser.js  •  v3
    -------------------------------------------------------
    Call analyseRun(decisions) with an array like the one
-   in your example.  ‘autoPath’ is ignored now because a
+   in your example.  'autoPath' is ignored now because a
    skipped level stops the trolley.
    -----------------------------------------------------*/
 
 export function analyseRun(decisions) {
   let livesLost = 0; // people actually killed
   let agencyCnt = 0; // times the lever was pulled
-  let maxCasualties = 0; // “worst possible” deaths
-  let potentialSaved = 0; // total lives that *didn’t* die
+  let maxCasualties = 0; // "worst possible" deaths
+  let potentialSaved = 0; // total lives that *didn't* die
 
   // helper – victims on a rail, covering both up/down & top/bottom keys
   const v = (d, rail) =>
@@ -20,7 +20,7 @@ export function analyseRun(decisions) {
     const top = v(d, "T");
     const bottom = v(d, "B");
 
-    maxCasualties += Math.max(top, bottom); // add “worst case”
+    maxCasualties += Math.max(top, bottom); // add "worst case"
 
     if (d.choice === "T") {
       // player chose top
@@ -34,7 +34,7 @@ export function analyseRun(decisions) {
       agencyCnt++;
     } else {
       // skipped: trolley stops
-      potentialSaved += -Math.abs( top -  bottom); 
+      potentialSaved += -Math.abs(top - bottom);
     }
   }
 
