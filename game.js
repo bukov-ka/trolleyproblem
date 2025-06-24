@@ -419,11 +419,11 @@ class Game {
   update(deltaTime) {
     if (this.showingResults) return;
     if (this.paused) return; // Do nothing if paused
-    
+
     // Convert deltaTime from milliseconds to seconds and apply train speed
     const deltaSeconds = deltaTime / 1000;
     const distanceToMove = this.trainSpeed * deltaSeconds;
-    
+
     this.viewportX += distanceToMove;
     this.trainX += distanceToMove;
 
